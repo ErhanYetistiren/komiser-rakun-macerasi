@@ -247,21 +247,104 @@ const R2D = {
     c.restore();
   },
 
-  /* ---- 2D YEDEK DÜNYA ÇİZİMİ + 3D ÜZERİNDEKİ METİN ETİKETLERİ ---- */
+  /* ---- GPU HIZLANDIRMALI DOM DÜNYA ETİKETLERİ (iPAD'DE SIFIR 2D CANVAS YÜKÜ!) ---- */
+  labelPool: [],
+  renderDomLabels(items) {
+    const layer = document.getElementById('worldLabelsLayer');
+    if (!layer) return;
+    while (this.labelPool.length < items.length) {
+      const el = document.createElement('div');
+      el.className = 'w-lbl';
+      layer.appendChild(el);
+      this.labelPool.push(el);
+    }
+    for (let i = 0; i < this.labelPool.length; i++) {
+      const el = this.labelPool[i];
+      const it = items[i];
+      if (!it) {
+        if (el.style.display !== 'none') el.style.display = 'none';
+        continue;
+      }
+      if (el.style.display === 'none') el.style.display = 'block';
+      if (el.dataset.txt !== it.txt) { el.textContent = it.txt; el.dataset.txt = it.txt; }
+      if (el.dataset.bg !== it.bg) { el.style.background = it.bg; el.dataset.bg = it.bg; }
+      if (el.dataset.fg !== it.fg) { el.style.color = it.fg; el.dataset.fg = it.fg; }
+      if (el.dataset.fs !== String(it.fs)) { el.style.fontSize = it.fs + 'px'; el.dataset.fs = String(it.fs); }
+      el.style.transform = `translate3d(${Math.round(it.x)}px, ${Math.round(it.y)}px, 0) translate(-50%, -50%)`;
+    }
+  },
+
+  /* ---- 2D YEDEK DÜNYA ÇİZİMİ + KONFETİ / NİŞAN KATMANI ---- */
   renderOverlayAnd2D(cv, stateObj) {
+    const use3D = R3D.ok && R3D.on;
+    const vw = window.innerWidth, vh = window.innerHeight;
+
+    // Collect GPU-accelerated DOM labels for Act I 3D OR Act II Astro 3D Bridges / Asteroids!
+    const domItems = [];
+    if (stateObj.astroActive) {
+      if (typeof AstroEngine !== 'undefined' && AstroEngine.collectLabels) {
+        AstroEngine.collectLabels(domItems, vw, vh);
+      }
+      this.renderDomLabels(domItems);
+    } else if (use3D && stateObj.mode !== 'title') {
+      for (const b of (stateObj.worldDef.buildings || [])) {
+        if (!b.label || stateObj.seaActive) continue;
+        const p2 = R3D.project(b.x, 128, b.y, vw, vh);
+        if (p2 && p2.x > 40 && p2.x < vw - 40 && p2.y > 40 && p2.y < vh - 40) {
+          domItems.push({ x: p2.x, y: p2.y, txt: b.label, bg: '#1e3566', fg: '#ffd233', fs: 12.5 });
+        }
+      }
+      for (const pad of (stateObj.pads || [])) {
+        const p2 = R3D.project(pad.x, 26, pad.y, vw, vh);
+        if (p2) domItems.push({ x: p2.x, y: p2.y, txt: pad.label, bg: '#fff7cc', fg: '#18284c', fs: 19 });
+      }
+      if (!stateObj.seaActive) {
+        for (const npc of (stateObj.npcs || [])) {
+          const dist = Math.hypot(npc.x - stateObj.player.x, npc.y - stateObj.player.y);
+          if (dist < 380 || npc.marker) {
+            const p2 = R3D.project(npc.x, 76 * (CHARACTERS[npc.id]?.scale || 1), npc.y, vw, vh);
+            if (p2) {
+              const tag = (npc.marker ? '❗ ' : '') + (CHARACTERS[npc.id]?.name || npc.id);
+              domItems.push({ x: p2.x, y: p2.y, txt: tag, bg: npc.marker ? '#ffdd33' : '#ffffff', fg: '#1e3566', fs: 13.5 });
+            }
+          }
+        }
+      } else {
+        const S = stateObj.sea;
+        if (S.crate) {
+          const cp = R3D.project(S.crate.x, 34, S.crate.y, vw, vh);
+          if (cp) domItems.push({ x: cp.x, y: cp.y, txt: '📦 Soru Sandığı!', bg: '#ffdd33', fg: '#1e3566', fs: 14 });
+        }
+        if (S.loaded) {
+          const bp = R3D.project(S.bx, 48, S.by, vw, vh);
+          if (bp) domItems.push({ x: bp.x, y: bp.y, txt: '🎯 Top Dolu! Sürükle veya Ateş Tuşuna Bas!', bg: '#38c962', fg: '#ffffff', fs: 14 });
+        }
+      }
+      this.renderDomLabels(domItems);
+    } else {
+      this.renderDomLabels([]);
+    }
+
+    const needCanvas = (!use3D && !stateObj.astroActive) ||
+      (stateObj.confetti && stateObj.confetti.length > 0) ||
+      (stateObj.seaActive && stateObj.sea.aiming);
+
+    if (!needCanvas) {
+      cv.classList.add('idle-3d');
+      return;
+    }
+    cv.classList.remove('idle-3d');
+
     const c = cv.getContext('2d');
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.65);
-    const w = Math.max(1, Math.round(window.innerWidth * dpr));
-    const h = Math.max(1, Math.round(window.innerHeight * dpr));
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+    const w = Math.max(1, Math.round(vw * dpr));
+    const h = Math.max(1, Math.round(vh * dpr));
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     c.clearRect(0, 0, w, h);
 
-    if (stateObj.astroActive) return; // Astro 3D Galaxy uses its own Three.js canvas + HUD
-
-    const use3D = R3D.ok && R3D.on;
     const t = stateObj.time;
 
-    if (!use3D) {
+    if (!use3D && !stateObj.astroActive) {
       // Full 2D Storybook Camera & World Fallback
       c.save();
       c.fillStyle = stateObj.worldId === 'lab' ? '#2c1e4a' : '#4ba8ff';
@@ -340,89 +423,26 @@ const R2D = {
       return;
     }
 
-    // In 3D Mode: Project crisp floating labels for Answer Cloud Pads, Buildings, NPC names, Sea Aiming Arc & Confetti onto cv2d!
-    const drawPill = (sx, sy, txt, bg = 'rgba(255,253,245,0.92)', fg = '#1e3566', fs = 16) => {
-      c.save();
-      c.font = `900 ${Math.round(fs * dpr)}px Nunito, sans-serif`;
-      const tw = c.measureText(txt).width;
-      const pw = tw + 22 * dpr, ph = (fs + 13) * dpr;
-      c.fillStyle = bg;
-      c.strokeStyle = '#1e3566';
-      c.lineWidth = 2.6 * dpr;
-      c.beginPath();
-      c.roundRect(sx - pw / 2, sy - ph / 2, pw, ph, 999);
-      c.fill();
-      c.stroke();
-      c.fillStyle = fg;
-      c.textAlign = 'center';
-      c.textBaseline = 'middle';
-      c.fillText(txt, sx, sy + 1);
-      c.restore();
-    };
-
-    if (stateObj.mode !== 'title') {
-      // Building signs
-      for (const b of (stateObj.worldDef.buildings || [])) {
-        if (!b.label || stateObj.seaActive) continue;
-        const p2 = R3D.project(b.x, 128, b.y, w, h);
-        if (p2 && p2.x > 40 && p2.x < w - 40 && p2.y > 40 && p2.y < h - 40) {
-          drawPill(p2.x, p2.y, b.label, 'rgba(30,53,102,0.88)', '#ffd233', 13);
-        }
-      }
-
-      // Answer Cloud Pad Labels (Chapters 5 & 11!)
-      for (const pad of (stateObj.pads || [])) {
-        const p2 = R3D.project(pad.x, 26, pad.y, w, h);
-        if (p2) {
-          drawPill(p2.x, p2.y, pad.label, '#fff7cc', '#18284c', 20);
-        }
-      }
-
-      // NPC Nameplate when close
-      if (!stateObj.seaActive) {
-        for (const npc of (stateObj.npcs || [])) {
-          const dist = Math.hypot(npc.x - stateObj.player.x, npc.y - stateObj.player.y);
-          if (dist < 380 || npc.marker) {
-            const p2 = R3D.project(npc.x, 76 * (CHARACTERS[npc.id]?.scale || 1), npc.y, w, h);
-            if (p2) {
-              const tag = (npc.marker ? '❗ ' : '') + (CHARACTERS[npc.id]?.name || npc.id);
-              drawPill(p2.x, p2.y, tag, npc.marker ? '#ffdd33' : 'rgba(255,255,255,0.88)', '#1e3566', 14);
-            }
-          }
-        }
-      }
-
-      // Sea Cannon Aiming Arc & Crate Marker (Chapter 8!)
-      if (stateObj.seaActive) {
-        const S = stateObj.sea;
-        if (S.crate) {
-          const cp = R3D.project(S.crate.x, 34, S.crate.y, w, h);
-          if (cp) drawPill(cp.x, cp.y, '📦 Soru Sandığı!', '#ffdd33', '#1e3566', 15);
-        }
-        if (S.loaded) {
-          const bp = R3D.project(S.bx, 48, S.by, w, h);
-          if (bp) drawPill(bp.x, bp.y, '🎯 Top Dolu! Ekranda Sürükle veya Boşluk ile Ateş Et!', '#3ecb68', '#ffffff', 15);
-        }
-        if (S.aiming) {
-          const steps = 8;
-          for (let i = 1; i <= steps; i++) {
-            const u = i / steps;
-            const ax = S.bx + (S.aimX - S.bx) * u;
-            const ay = S.by + (S.aimY - S.by) * u;
-            const az = 18 + Math.sin(u * Math.PI) * 95;
-            const sp = R3D.project(ax, az, ay, w, h);
-            if (sp) {
-              c.fillStyle = i === steps ? '#3ecb68' : '#ffdd33';
-              c.beginPath();
-              c.arc(sp.x, sp.y, (i === steps ? 16 : 6) * dpr, 0, TAU);
-              c.fill();
-            }
-          }
+    // Sea Cannon Aiming Arc (only when actively dragging aim!)
+    if (use3D && !stateObj.astroActive && stateObj.seaActive && stateObj.sea.aiming) {
+      const S = stateObj.sea;
+      const steps = 8;
+      for (let i = 1; i <= steps; i++) {
+        const u = i / steps;
+        const ax = S.bx + (S.aimX - S.bx) * u;
+        const ay = S.by + (S.aimY - S.by) * u;
+        const az = 18 + Math.sin(u * Math.PI) * 95;
+        const sp = R3D.project(ax, az, ay, w, h);
+        if (sp) {
+          c.fillStyle = i === steps ? '#3ecb68' : '#ffdd33';
+          c.beginPath();
+          c.arc(sp.x, sp.y, (i === steps ? 15 : 6) * dpr, 0, TAU);
+          c.fill();
         }
       }
     }
 
-    // Floating Confetti & Popups (works in all modes!)
+    // Floating Confetti (works in all modes!)
     for (const cf of (stateObj.confetti || [])) {
       c.save();
       c.translate(cf.x * dpr, cf.y * dpr);

@@ -7,7 +7,7 @@
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
-/* ---- PAYLAŞIMLI THREE.JS + DRACO + GLTF ÇEKİRDEĞİ (ACT I VE ACT II ORTAK!) ---- */
+/* ---- PAYLAŞIMLI THREE.JS + DRACO + PBR ENVIRONMENT + TEKİL RENDERER (SABİT 60 FPS iPAD!) ---- */
 const ThreeShared = {
   ready: false,
   loading: false,
@@ -16,12 +16,15 @@ const ThreeShared = {
   DRACOLoader: null,
   SkeletonUtils: null,
   loaderInstance: null,
+  sharedRenderer: null,
+  envMap: null,
+  gfxMode: 'fast', // 'fast' (iPad 60 FPS) | 'hd' | 'ultra'
   glbCache: new Map(),
 
   async ensure() {
     if (this.ready) return true;
     if (this.loading) {
-      while (this.loading) await new Promise(r => setTimeout(r, 40));
+      while (this.loading) await new Promise(r => setTimeout(r, 35));
       return this.ready;
     }
     this.loading = true;
@@ -50,6 +53,71 @@ const ThreeShared = {
     return this.ready;
   },
 
+  getRenderer() {
+    if (this.sharedRenderer) return this.sharedRenderer;
+    const THREE = this.THREE;
+    const cv = document.getElementById('glCanvas');
+    const renderer = new THREE.WebGLRenderer({
+      canvas: cv,
+      antialias: true,
+      powerPreference: 'high-performance',
+      stencil: false
+    });
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    this.sharedRenderer = renderer;
+    this.applyGfxMode(this.gfxMode);
+
+    // Build precomputed PBR Sky/Studio Environment Reflection Texture ONCE (0ms per frame!)
+    try {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const envScene = new THREE.Scene();
+      envScene.background = new THREE.Color('#6ec6ff');
+      const sunSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(6, 12, 10),
+        new THREE.MeshBasicMaterial({ color: 0xfff5cc })
+      );
+      sunSphere.position.set(18, 26, 16);
+      const skyDome = new THREE.Mesh(
+        new THREE.SphereGeometry(40, 16, 12),
+        new THREE.MeshBasicMaterial({ color: 0x8ae0ff, side: THREE.BackSide })
+      );
+      const groundBounce = new THREE.Mesh(
+        new THREE.PlaneGeometry(80, 80),
+        new THREE.MeshBasicMaterial({ color: 0x56c766, side: THREE.DoubleSide })
+      );
+      groundBounce.rotation.x = Math.PI / 2;
+      groundBounce.position.y = -8;
+      envScene.add(skyDome, sunSphere, groundBounce);
+      this.envMap = pmrem.fromScene(envScene, 0.04).texture;
+      pmrem.dispose();
+    } catch (e) {}
+
+    window.addEventListener('resize', () => {
+      if (!this.sharedRenderer) return;
+      this.applyGfxMode(this.gfxMode);
+    });
+    return renderer;
+  },
+
+  applyGfxMode(mode = 'fast') {
+    this.gfxMode = mode;
+    if (!this.sharedRenderer || !this.THREE) return;
+    const THREE = this.THREE;
+    const dpr = window.devicePixelRatio || 1;
+    const cap = mode === 'ultra' ? 2.0 : mode === 'hd' ? 1.5 : 1.18;
+    this.sharedRenderer.setPixelRatio(Math.min(dpr, cap));
+    this.sharedRenderer.setSize(window.innerWidth, window.innerHeight);
+    if (mode === 'fast') {
+      this.sharedRenderer.shadowMap.enabled = false;
+    } else {
+      this.sharedRenderer.shadowMap.enabled = true;
+      this.sharedRenderer.shadowMap.type = mode === 'ultra' ? THREE.PCFSoftShadowMap : THREE.BasicShadowMap;
+    }
+    this.sharedRenderer.shadowMap.needsUpdate = true;
+  },
+
   async loadGLB(filename) {
     if (this.glbCache.has(filename)) return this.glbCache.get(filename);
     await this.ensure();
@@ -60,7 +128,7 @@ const ThreeShared = {
     return gltf;
   },
 
-  async spawnGLB(filename, targetSize = 2.2) {
+  async spawnGLB(filename, targetSize = 2.2, castShadow = false) {
     await this.ensure();
     const THREE = this.THREE;
     try {
@@ -80,12 +148,11 @@ const ThreeShared = {
 
       const wrapper = new THREE.Group();
       wrapper.add(cloned);
-      cloned.traverse(n => {
-        if (n.isMesh) {
-          n.castShadow = true;
-          n.receiveShadow = true;
-        }
-      });
+      if (castShadow) {
+        cloned.traverse(n => {
+          if (n.isMesh) n.castShadow = true;
+        });
+      }
 
       let mixer = null;
       const clips = {};
@@ -99,8 +166,8 @@ const ThreeShared = {
     } catch (e) {
       const g = new THREE.Group();
       const m = new THREE.Mesh(
-        new THREE.SphereGeometry(targetSize * 0.4, 16, 14),
-        new THREE.MeshStandardMaterial({ color: 0x38b6ff, roughness: 0.35 })
+        new THREE.SphereGeometry(targetSize * 0.4, 14, 12),
+        new THREE.MeshStandardMaterial({ color: 0x38b6ff, roughness: 0.3, metalness: 0.2 })
       );
       m.position.y = targetSize * 0.4;
       g.add(m);
@@ -147,32 +214,26 @@ const R3D = {
     if (!ok) { this.ok = false; this.on = false; return false; }
     try {
       const THREE = ThreeShared.THREE;
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.65));
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.08;
+      const renderer = ThreeShared.getRenderer();
       this.renderer = renderer;
 
       const scene = new THREE.Scene();
+      if (ThreeShared.envMap) scene.environment = ThreeShared.envMap;
       this.scene = scene;
 
-      const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 1, 520);
+      const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 1, 460);
       this.camera = camera;
 
-      const hemi = new THREE.HemisphereLight(0xdff4ff, 0x4f7a3e, 1.25);
+      const hemi = new THREE.HemisphereLight(0xe4f6ff, 0x4f7a3e, 1.35);
       scene.add(hemi);
 
-      const sun = new THREE.DirectionalLight(0xfff4d6, 1.75);
+      const sun = new THREE.DirectionalLight(0xfff4d6, 1.65);
       sun.position.set(45, 78, 42);
       sun.castShadow = true;
-      sun.shadow.mapSize.set(1536, 1536);
+      sun.shadow.mapSize.set(1024, 1024);
       sun.shadow.camera.near = 5;
-      sun.shadow.camera.far = 240;
-      const sd = 68;
+      sun.shadow.camera.far = 220;
+      const sd = 62;
       sun.shadow.camera.left = -sd; sun.shadow.camera.right = sd;
       sun.shadow.camera.top = sd; sun.shadow.camera.bottom = -sd;
       sun.shadow.bias = -0.0008;
@@ -687,6 +748,14 @@ const R3D = {
     }
 
     const sc = (def.scale || 1) * 1.15;
+    // Soft grounded circular contact shadow under every character (0ms cost, works even in 60FPS Fast mode!)
+    const cShadow = new THREE.Mesh(
+      new THREE.CircleGeometry(1.18, 16),
+      new THREE.MeshBasicMaterial({ color: 0x0f1e3a, transparent: true, opacity: 0.28, depthWrite: false })
+    );
+    cShadow.rotation.x = -Math.PI / 2;
+    cShadow.position.y = 0.04;
+    root.add(cShadow);
     root.scale.set(sc, sc, sc);
     return rig;
   },
@@ -797,25 +866,30 @@ const R3D = {
 
     const px = this.wx(stateObj.player.x), pz = this.wz(stateObj.player.y);
 
-    // Smooth Building & Tree Occlusion Fade when Komiser Rakun walks behind them!
+    // Fast Cached Building & Tree Occlusion Fade (Zero per-frame .traverse()!)
     for (const o of this.tallObjects) {
       const blocking = stateObj.mode !== 'title' && !stateObj.seaActive &&
         o.z > pz + 1.2 && Math.abs(o.x - px) < o.r && (o.z - pz) < 22;
       const targetOp = blocking ? 0.32 : 1.0;
-      o.fade = (o.fade === undefined ? 1 : o.fade) + (targetOp - (o.fade === undefined ? 1 : o.fade)) * Math.min(1, dt * 8);
-      const isFaded = o.fade < 0.97;
-      o.grp.traverse((n) => {
-        if (n.isMesh && n.material) {
-          if (isFaded && !n.userData.clonedMat) {
-            n.material = n.material.clone();
-            n.userData.clonedMat = true;
-          }
-          if (n.userData.clonedMat) {
-            n.material.transparent = isFaded;
-            n.material.opacity = o.fade;
-          }
+      const prev = o.fade === undefined ? 1.0 : o.fade;
+      o.fade = prev + (targetOp - prev) * Math.min(1, dt * 8);
+      if (Math.abs(o.fade - (o.appliedFade ?? 1.0)) > 0.025) {
+        o.appliedFade = o.fade;
+        if (!o.meshes) {
+          o.meshes = [];
+          o.grp.traverse((n) => {
+            if (n.isMesh && n.material) {
+              n.material = n.material.clone();
+              o.meshes.push(n.material);
+            }
+          });
         }
-      });
+        const isFaded = o.fade < 0.97;
+        for (let m = 0; m < o.meshes.length; m++) {
+          o.meshes[m].transparent = isFaded;
+          o.meshes[m].opacity = o.fade;
+        }
+      }
     }
 
     // Camera (Sunny-Hill 42° Picture-Book Angle + Dialog Framing + Shake!)

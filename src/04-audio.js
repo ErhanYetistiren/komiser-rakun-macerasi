@@ -18,8 +18,15 @@ const AudioSys = {
   musicStep: 0,
   musicTheme: 'town',
   iosUnlocked: false,
+  isIOS: false,
+  speechSpeed: 'slow', // 'slow' | 'normal'
 
   init() {
+    const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+    const plat = (typeof navigator !== 'undefined' && navigator.platform) || '';
+    const mtp = (typeof navigator !== 'undefined' && navigator.maxTouchPoints) || 0;
+    this.isIOS = /iPad|iPhone|iPod/i.test(ua) || (plat === 'MacIntel' && mtp > 1);
+
     if ('speechSynthesis' in window) {
       const loadV = () => {
         this.voices = window.speechSynthesis.getVoices() || [];
@@ -203,6 +210,19 @@ const AudioSys = {
     this.tone(245, 0.20, 'sine', 0.13, 0.13, 195);
   },
 
+  playHeartBreak() {
+    if (!this.soundOn) return;
+    this.tone(340, 0.12, 'sawtooth', 0.16, 0, 220);
+    this.tone(215, 0.26, 'sawtooth', 0.16, 0.12, 115);
+    this.noise(0.14, 0.10, 0.05, 420, 1.2);
+  },
+
+  playLedgeGrab() {
+    if (!this.soundOn) return;
+    this.tone(480, 0.07, 'triangle', 0.13, 0, 760);
+    this.tone(760, 0.09, 'sine', 0.12, 0.06, 980);
+  },
+
   playPickup() {
     if (!this.soundOn) return;
     this.tone(587, 0.08, 'sine', 0.13, 0, 880);
@@ -248,8 +268,13 @@ const AudioSys = {
     this.wordIdx = 0;
     if (onWordIdx) onWordIdx(0);
 
-    const rate = (ch.voice && ch.voice.rate) || 1.0;
-    const msPerWord = Math.max(180, Math.round(310 / rate));
+    const rawRate = Math.min(1.06, Math.max(0.78, (ch.voice && ch.voice.rate) || 1.0));
+    const speedFactor = this.isIOS
+      ? (this.speechSpeed === 'slow' ? 0.66 : 0.80)
+      : (this.speechSpeed === 'slow' ? 0.82 : 0.94);
+    const rate = Math.max(0.56, Math.min(0.95, +(rawRate * speedFactor).toFixed(2)));
+    const baseWordMs = this.speechSpeed === 'slow' ? 430 : 335;
+    const msPerWord = Math.max(260, Math.round(baseWordMs / Math.max(0.75, rawRate)));
     let wi = 0;
 
     // Garantili zamanlayıcı: TTS olmasa veya boundary ateşlemese bile kelime kelime vurgular ve ağzı/gagayı oynatır
@@ -265,13 +290,15 @@ const AudioSys = {
           this.speaking = false;
           this.speakerId = null;
           if (onWordIdx) onWordIdx(-1);
-        }, 220);
+        }, 240);
       }
     }, msPerWord);
 
     if (this.soundOn && 'speechSynthesis' in window) {
       try {
-        const clean = text.replace(/[★⭐🦖🐉🦎🐺🤡🐦‍⬛🐦🦝]/g, '');
+        const clean = text
+          .replace(/[★⭐🦖🐉🦎🐺🤡🐦‍⬛🐦🦝🔥❤️🪙🤖⚡]/g, '')
+          .replace(/([.!?;:])\s+/g, '$1 , ');
         const u = new SpeechSynthesisUtterance(clean);
         u.lang = 'tr-TR';
         u.pitch = (ch.voice && ch.voice.pitch) || 1.0;

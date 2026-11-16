@@ -15,6 +15,7 @@ const jsFiles = [
   '05-render3d.js',
   '06-render2d.js',
   '07-arsenal-and-astro-data.js',
+  '07b-astro-learning.js',
   '08-astro3d-engine.js',
   '09-main-game.js'
 ];

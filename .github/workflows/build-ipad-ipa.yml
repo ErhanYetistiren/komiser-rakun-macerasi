@@ -127,7 +127,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload v1.0.0 KomiserRakun-iPad.ipa --clobber 2>/dev/null || \
-          gh release create v1.0.0 KomiserRakun-iPad.ipa \
-            --title "Komiser Rakun iPad & iOS Sürümü (.ipa)" \
-            --notes "Sunny Hill + Astro Bot kalitesinde 20 bölümlük 3D iPad/iOS (.ipa) paketi. Sideloadly, AltStore, SideStore veya TrollStore ile doğrudan iPad'e kurulabilir."
+          gh release upload v2.0.0 KomiserRakun-iPad.ipa --clobber 2>/dev/null || \
+          gh release create v2.0.0 KomiserRakun-iPad.ipa \
+            --title "Komiser Rakun V2.0 — Sabit 60 FPS iPad & Astro-Galaksi Tam Sürüm (.ipa)" \
+            --notes "V2.0: Sabit 60 FPS iPad optimizasyonu, Kalp & 3 Yıldız sistemi, 6 farklı interaktif soru/kodlama/BİLSEM bulmacası, 3D Terazi & İngilizce köprüler, Kenara Tutunma, Evcil Dostlar, Kapsül Makinesi ve Veli Karnesi!"

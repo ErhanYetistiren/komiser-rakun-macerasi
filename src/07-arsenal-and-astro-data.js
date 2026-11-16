@@ -6,10 +6,12 @@
 
 const ARSENAL = {
   suits: [
-    { id: 'robot_suit', name: 'Astro-Robot Zırhı', icon: '🤖', glb: 'RobotExpressive.glb', size: 2.35, cost: 0, desc: 'İkonik mavi-beyaz Astro-Bot ekspresif 3D robotu!' },
-    { id: 'rae_astro', name: 'Rakun Uzay Astronotu', icon: '🦝', glb: 'Astronaut_Rae.glb', size: 2.25, cost: 35, desc: 'Komiser Rakun\'un özel uzay kasklı 3D astronot kostümü!' },
-    { id: 'knight_hero', name: 'Galaksi Şövalyesi', icon: '⚔️', glb: 'KnightCharacter.glb', size: 2.35, cost: 70, desc: 'Tam çelik zırhlı 3D şövalye kahraman!' },
-    { id: 'mech_rae', name: 'Dev Rakun Mek-Robotu', icon: '🦾', glb: 'Mech_Rae.glb', size: 2.85, cost: 135, desc: 'Ağır zırhlı 3D Rakun Mekanik Savaş Robotu!' }
+    { id: 'robot_suit', name: 'Astro-Robot Zırhı', icon: '🤖', glb: 'RobotExpressive.glb', size: 2.35, cost: 0, trail: '#00eeff', desc: 'İkonik mavi-beyaz Astro-Bot ekspresif 3D robotu!' },
+    { id: 'rae_astro', name: 'Rakun Uzay Astronotu', icon: '🦝', glb: 'Astronaut_Rae.glb', size: 2.25, cost: 35, trail: '#ffd43b', desc: 'Komiser Rakun\'un özel uzay kasklı 3D astronot kostümü!' },
+    { id: 'knight_hero', name: 'Galaksi Şövalyesi', icon: '⚔️', glb: 'KnightCharacter.glb', size: 2.35, cost: 70, trail: '#9be7ff', desc: 'Tam çelik zırhlı 3D şövalye kahraman!' },
+    { id: 'trex_suit', name: 'Dino-Titan Kostümü', icon: '🦖', glb: 'Trex.glb', size: 2.65, cost: 95, starReq: 5, trail: '#52ff7a', desc: '5⭐ Kilidi! T-Rex kostümüyle koşarken zümrüt iz bırakır!' },
+    { id: 'mech_rae', name: 'Dev Rakun Mek-Robotu', icon: '🦾', glb: 'Mech_Rae.glb', size: 2.85, cost: 135, starReq: 9, trail: '#ff6b2b', desc: '9⭐ Kilidi! Ağır zırhlı alev izli 3D Savaş Robotu!' },
+    { id: 'gold_champ', name: 'Altın Şampiyon Astro', icon: '👑', glb: 'RobotExpressive.glb', size: 2.5, cost: 175, starReq: 15, goldTint: true, trail: '#ff38b8', desc: '15⭐ Kilidi! Saf altın kaplama robot + Gökkuşağı hız izi!' }
   ],
   weapons: [
     { id: 'club', name: 'Dedektif Copu', icon: '🏏', glb: 'Club.glb', cost: 0, dmg: 1, range: 3.5, color: '#6cb8ff', desc: 'Hızlı başlangıç dedektif silahı (Hasar: 1).' },
@@ -47,6 +49,13 @@ const ARSENAL = {
     { id: 'frog_ship', name: 'Zümrüt Kurbağa Jeti', icon: '🐸', glb: 'Spaceship_Frog.glb', cost: 65, shots: 4, speed: 1.18, desc: '4\'lü plazma toplu süper çevik uzay gemisi!' },
     { id: 'dispatcher', name: 'Ağır Galaksi Kruvazörü', icon: '🛸', glb: 'Dispatcher.glb', cost: 100, shots: 5, speed: 1.22, desc: '5\'li yayılım lazeri + ağır kruvazör gövdesi!' },
     { id: 'bob_ace', name: 'Süper Fırtına Jet-X', icon: '🚀', glb: 'Bob.glb', cost: 145, shots: 6, speed: 1.32, desc: '6\'lı süper lazer fırtınası — Galaksi Hakimi!' }
+  ],
+  pets: [
+    { id: 'none_pet', name: 'Yardımcı Dron Yok', icon: '🐾', glb: null, cost: 0, bonusHearts: 0, magnet: false, autoShot: false, desc: 'Tek başına macera.' },
+    { id: 'vudi_pet', name: 'Uzaylı Vudi Dronu', icon: '🐦', glb: 'Parrot.glb', cost: 40, bonusHearts: 0, magnet: true, autoShot: false, desc: 'Yanında uçar ve yakındaki altınları senin için toplar!' },
+    { id: 'bee_pet', name: 'Altın Arı Muhafızı', icon: '🐝', glb: 'Astronaut_Bee.glb', cost: 75, bonusHearts: 1, magnet: true, autoShot: false, desc: '+1 Ekstra Kalp kapasitesi + altın mıknatısı!' },
+    { id: 'dino_pet', name: 'Mini T-Rex Koruyucu', icon: '🦖', glb: 'Trex.glb', cost: 115, bonusHearts: 1, magnet: false, autoShot: true, desc: '+1 Kalp + yakındaki düşmanlara otomatik plazma atar!' },
+    { id: 'wing_pet', name: 'Zümrüt Kanat Dostu', icon: '🛸', glb: 'Spaceship_Frog.glb', cost: 155, starReq: 10, bonusHearts: 2, magnet: true, autoShot: true, desc: '10⭐ Kilidi! +2 Kalp, Mıknatıs ve Uzay Savaşında Kanat Uçağı ateşi!' }
   ]
 };
 
@@ -242,6 +251,31 @@ const ASTRO_CHAPTERS = [
       { q: 'Bir çiftlikte 6 tavuk ve 4 koyun vardır. Bu hayvanların AYAK SAYILARI TOPLAMI kaçtır?', v: '🐔(2 ayak) × 6 + 🐑(4 ayak) × 4', opts: ['28 ayak', '20 ayak', '24 ayak'], ans: 0, exp: '6 tavuk = 6 × 2 = 12 ayak. 4 koyun = 4 × 4 = 16 ayak. 12 + 16 = 28 ayak!' },
       { q: '"CUMHURİYET" kelimesi kaç hecelidir ve "BAĞIMSIZLIK" bizim için ne ifade eder?', v: '🇹🇷 CUM-HU-Rİ-YET', opts: ['4 hecelidir — Özgür ve hür yaşamak demektir', '3 hecelidir — Oyun oynamak demektir', '5 hecelidir — Tatil yapmak demektir'], ans: 0, exp: 'CUM - HU - Rİ - YET 4 hecelidir; bağımsızlık milletimizin özgür yaşamasıdır!' },
       { q: 'İngilizcede "TEN RED APPLES and FIVE BLUE BIRDS" ifadesinin Türkçesi nedir?', v: '🍎×10 & 🐦×5', opts: ['10 kırmızı elma ve 5 mavi kuş', '5 sarı muz ve 10 yeşil kurbağa', '10 mavi top ve 5 kırmızı araba'], ans: 0, exp: 'Ten(10) red(kırmızı) apples(elma) ve five(5) blue(mavi) birds(kuş)!' }
+    ]
+  },
+  {
+    num: 21,
+    id: 'ch21',
+    astroType: 'platformer',
+    difficulty: 6,
+    starReq: 10,
+    subject: 'BİLSEM & BİLİM ŞAMPİYONLUĞU',
+    subjectKey: 'bilsem',
+    subjectColor: '#ff9f1c',
+    topic: 'Robot Kodlama, 3D Küp Sayma, Uzay Bilimi ve Mantık Zirvesi!',
+    title: 'Bölüm 21 (Gizli): Gökkuşağı Şampiyonlar Galaksisi!',
+    theme: { skyTop: '#12063b', skyBot: '#00d2ff', plat: '#ffe066', side: '#5f27cd', tree: 'Star.glb', planet: 'Planet_3.glb' },
+    rescueModels: ['Astronaut_Rae.glb', 'KnightCharacter.glb', 'Mech_Frog.glb'],
+    enemyModels: ['Enemy_Flying.glb', 'Wasp.glb', 'Crab.glb'],
+    bossModel: 'Mech_Rae.glb',
+    bossName: 'ALTIN GALAKSİ MUHAFIZI SÜPER-MEK',
+    bossHp: 40,
+    rewardUnlock: { type: 'armors', id: 'king_crown', label: '👑 Efsanevi Galaksi Tacı!' },
+    summary: '10⭐ ile açılan Gizli Şampiyonluk Gezegeni! 3D Terazi köprülerini geç, Robot Kodlama ve BİLSEM Küp bulmacalarını çöz, Altın Muhafızı yen!',
+    questions: [
+      { q: 'Güneş sistemimizde Güneş\'e EN YAKIN gezegen hangisidir ve Dünya\'mız kaçıncı sıradadır?', v: '☀️ → 1. ? → 2. Venüs → 3. Dünya', opts: ['En yakın Merkür — Dünya 3. sıradadır', 'En yakın Mars — Dünya 1. sıradadır', 'En yakın Jüpiter — Dünya 5. sıradadır'], ans: 0, exp: 'Sıralama: Merkür, Venüs, Dünya (3.), Mars, Jüpiter, Satürn, Uranüs, Neptün!' },
+      { q: 'Bir sayı örüntüsü "2 - 5 - 11 - 23 - ?" şeklinde ilerliyorsa (2 katının 1 fazlası), soru işareti yerine kaç gelir?', v: '🧠 ×2 + 1 Kuralı!', opts: ['47', '45', '35'], ans: 0, exp: 'Her sayı 2 ile çarpılıp 1 ekleniyor: 23 × 2 = 46, 46 + 1 = 47!' },
+      { q: 'Maddenin belirli bir şekli olan sert haline KATI denir. Buz eridiğinde maddenin hangi haline geçer?', v: '🧊 → 💧', opts: ['Sıvı haline (Su)', 'Gaz haline (Buhar)', 'Kaya haline'], ans: 0, exp: 'Katı buz ısı alarak erir ve sıvı (su) haline geçer!' }
     ]
   }
 ];

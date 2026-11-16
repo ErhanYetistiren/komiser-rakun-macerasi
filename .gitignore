@@ -1,0 +1,7 @@
+node_modules/
+www/
+ios/
+ipa_stage/
+game.bundle.js
+*.ipa
+.DS_Store

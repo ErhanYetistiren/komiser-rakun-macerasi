@@ -1,0 +1,264 @@
+<div id="gameWrap">
+  <canvas id="glCanvas" class="sceneCanvas"></canvas>
+  <canvas id="astroCanvas" class="sceneCanvas hidden"></canvas>
+  <canvas id="cv2d" class="sceneCanvas"></canvas>
+  <div id="vignette"></div>
+</div>
+
+<div id="loadingPill" class="hidden">🚀 3D Sahne Hazırlanıyor...</div>
+
+<!-- TOP HUD -->
+<div id="hud" class="hidden">
+  <div class="hud-group">
+    <div id="questCard" title="Görev Detayı ve İpucu">
+      <div id="questChapterTag">BÖLÜM 1 · TÜRKÇE</div>
+      <div id="questTitle">Yardımcı Vudi ile konuş!</div>
+    </div>
+  </div>
+  <div class="hud-group">
+    <div class="stat-pill" title="Tamamlanan Bölümler">⭐ <span id="hudStars">0</span>/20</div>
+    <div class="stat-pill" title="Altın">🪙 <span id="hudCoins">0</span></div>
+    <div class="stat-pill hide-sm" title="Kurtarılan Dostlar & Gizli İpuçları">🤖 <span id="hudSecrets">0</span></div>
+    <button id="btnArsenal" class="btn btn-orange btn-sm" title="Kılıçlar, Eldivenler, Zırhlar ve Uzay Uçakları">⚔️ <span class="hide-sm">Cephane</span></button>
+    <button id="btnHubWorld" class="btn btn-green btn-sm" title="Kurtarılan 3D Dostlar Üssü">🌟 <span class="hide-sm">3D Üs</span></button>
+    <button id="btnAstroQuick" class="btn btn-purple btn-sm" title="Astro-Bot 3D Gezegenler">🚀 <span class="hide-sm">Galaksi</span></button>
+    <button id="btnAtlas" class="btn btn-sky btn-sm" title="20 Bölüm Haritası">🗺️ <span class="hide-sm">Bölümler</span></button>
+    <button id="btnMenu" class="btn btn-navy btn-sm" title="Ayarlar, Tablet Kontrolleri ve Diploma">⚙️</button>
+  </div>
+</div>
+
+<!-- BOSS / ACTION BAR -->
+<div id="bossBar" class="hidden">
+  <div id="bossName">DOKTOR PALYAÇO — ŞAPŞALTRON-3000</div>
+  <div id="bossPips"></div>
+</div>
+
+<!-- ASTRO 3D PLATFORMER & STARFIGHTER TABLET HUD -->
+<div id="astroHud" class="hidden">
+  <div class="astro-status-box">
+    <div id="astroHearts">❤️❤️❤️❤️</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span id="astroBots">🤖 Dost: 0/3</span>
+      <span id="astroGearLabel" style="color:#ffd43b">🏏 Cop</span>
+    </div>
+  </div>
+  <div class="astro-btns">
+    <button id="btnAstroGadget" class="pad-btn" type="button"><span style="font-size:22px">🐸</span><span>Güç</span></button>
+    <button id="btnAstroAtk" class="pad-btn" type="button"><span style="font-size:24px">⚔️</span><span>Vur</span></button>
+    <button id="btnAstroDash" class="pad-btn" type="button"><span style="font-size:22px">💨</span><span>Atıl</span></button>
+    <button id="btnAstroJump" class="pad-btn" type="button"><span style="font-size:26px">🚀</span><span>Zıpla / Lazer</span></button>
+  </div>
+</div>
+
+<!-- TABLET / MOBILE LEFT JOYSTICK & RIGHT INTERACT BUTTON -->
+<div id="joyZone">
+  <div id="joyKnob"></div>
+</div>
+<button id="interactBtn" class="btn hidden" type="button">💬 Konuş</button>
+
+<!-- DIALOGUE OVERLAY -->
+<div id="dialogOverlay" class="hidden">
+  <div id="portraitWrap">
+    <canvas id="portraitCanvas" width="160" height="160"></canvas>
+  </div>
+  <div id="dialogBody">
+    <div id="speakerBadge">🦝 Komiser Rakun</div>
+    <div id="dialogWords"></div>
+    <div id="dialogActions">
+      <button id="btnReplayVoice" class="btn btn-cream btn-sm" type="button">🔊 Dinle</button>
+      <button id="btnDialogNext" class="btn btn-green btn-sm" type="button">Devam ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- TITLE SCREEN -->
+<div id="titleOverlay" class="overlay">
+  <div class="title-badge-top">★ SUNNY HILL + ASTRO BOT TARZI TABLET & PC 3D MACERA ★</div>
+  <h1 id="heroLogo">KOMİSER RAKUN<br><span style="font-size:0.52em;color:#fff">Şapşal Kahramanlar & Astro-Galaksi</span></h1>
+  <div id="heroSubtitle">2. Sınıf Tüm Dersler (Bölüm 1–12) + 3D Astro Gezegenler & Uzay Savaşı (Bölüm 13–20)</div>
+
+  <div class="title-cast-strip">
+    <span class="cast-chip">🦝 Komiser Rakun</span>
+    <span class="cast-chip">🐦 Vudi Ağaçkakan</span>
+    <span class="cast-chip">🤡 Doktor Palyaço</span>
+    <span class="cast-chip">🐦‍⬛ Kurnaz Karga</span>
+    <span class="cast-chip">🦖 Şapşal T-Rex</span>
+    <span class="cast-chip">🐉 Komik Ejderha</span>
+    <span class="cast-chip">🦎 Şehir Devi Godzilla</span>
+    <span class="cast-chip">🐺 Kurnaz Kurt</span>
+  </div>
+
+  <div class="title-main-btns">
+    <button id="btnContinue" class="gbtn btn-green hidden" type="button">▶ Devam Et</button>
+    <button id="btnNewGame" class="gbtn" type="button">⭐ Maceraya Başla (Bölüm 1)</button>
+    <button id="btnStartAstroDirect" class="gbtn btn-purple" type="button">🚀 Astro-Galaksi 3D (Bölüm 13)</button>
+  </div>
+
+  <div class="title-sub-btns">
+    <button id="btnToggleTouchTitle" class="btn btn-green btn-sm" type="button">📱 Tablet Tuşları: Açık</button>
+    <button id="btnToggleViewTitle" class="btn btn-sky btn-sm" type="button">🧊 Görünüm: 3D</button>
+    <button id="btnToggleSoundTitle" class="btn btn-cream btn-sm" type="button">🔊 Ses: Açık</button>
+    <button id="btnToggleMusicTitle" class="btn btn-cream btn-sm" type="button">🎵 Müzik: Açık</button>
+    <button id="btnFullscreenTitle" class="btn btn-cream btn-sm" type="button">⛶ Tam Ekran</button>
+    <button id="btnInfoTitle" class="btn btn-orange btn-sm" type="button">ℹ️ Rehber</button>
+  </div>
+</div>
+
+<!-- DETECTIVE PROFILE & UNIFORM SETUP MODAL -->
+<div id="setupModal" class="overlay modal-backdrop hidden">
+  <div class="card-modal">
+    <h2>🦝 Dedektif & Galaksi Kaptanı Kimliği</h2>
+    <p style="margin:4px 0 10px;font-weight:700;color:#4a4366">Adını yaz, üniformanı seç ve hem tablette hem bilgisayarda 20 bölümlük maceraya başla!</p>
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+      <div style="width:124px;height:124px;border-radius:22px;border:4px solid var(--navy);background:#dff2ff;overflow:hidden;flex-shrink:0">
+        <canvas id="setupPreviewCanvas" width="180" height="180" style="width:100%;height:100%"></canvas>
+      </div>
+      <div style="flex:1;min-width:210px">
+        <div class="setup-row">
+          <label for="playerNameInput" style="font-weight:800;display:block;margin-bottom:4px">Dedektif Adın:</label>
+          <input id="playerNameInput" class="name-input" type="text" maxlength="18" placeholder="Örn: Dedektif Efe" value="Cesur Dedektif" />
+        </div>
+        <div class="setup-row">
+          <div style="font-weight:800">Üniforma Rengi:</div>
+          <div id="coatSwatches" class="swatch-row"></div>
+        </div>
+        <div class="setup-row">
+          <div style="font-weight:800">Başlangıç Şapkası:</div>
+          <div id="starterAccRow" class="swatch-row"></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px">
+      <button id="btnTestVoices" class="btn btn-sky btn-sm" type="button">🔊 8 Karakter Sesini Dene</button>
+      <div style="display:flex;gap:10px">
+        <button id="btnSetupCancel" class="btn btn-cream btn-sm" type="button">Geri</button>
+        <button id="btnSetupStart" class="btn btn-green" type="button">🚓 Göreve Başla! ▶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ARSENAL MODAL -->
+<div id="arsenalModal" class="overlay modal-backdrop hidden">
+  <div class="card-modal" style="width:min(940px,96vw)">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <h2>⚔️ Cephane, Kılıç, Eldiven, Zırh & Uzay Uçağı Atölyesi</h2>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="stat-pill">🪙 <span id="arsenalCoins">0</span> Altın</span>
+        <button id="btnCloseArsenal" class="btn btn-navy btn-sm" type="button">✖ Kapat</button>
+      </div>
+    </div>
+    <div id="arsenalContainer"></div>
+  </div>
+</div>
+
+<!-- QUIZ MODAL -->
+<div id="quizModal" class="overlay modal-backdrop hidden">
+  <div class="card-modal">
+    <div id="quizHeader">
+      <span id="quizSubjectBadge">TÜRKÇE · HECE BİLGİSİ</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="btnQuizRead" class="btn btn-sky btn-sm" type="button">🔊 Soruyu Oku</button>
+        <span id="quizProgress">Soru 1 / 2</span>
+      </div>
+    </div>
+    <div id="quizQuestionBox">
+      <div id="quizQuestionText"></div>
+      <div id="quizVisualHint"></div>
+    </div>
+    <div id="quizChoices"></div>
+    <div id="quizFeedback"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:12px">
+      <button id="btnQuizNext" class="btn btn-green hidden" type="button">Sonraki ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAPTER ATLAS MODAL -->
+<div id="atlasModal" class="overlay modal-backdrop hidden">
+  <div class="card-modal" style="width:min(960px,96vw)">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h2>🗺️ 20 Bölümlük Macera & Galaksi Haritası</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="btnPracticeOpen" class="btn btn-purple btn-sm" type="button">🎯 Soru Antrenmanı</button>
+        <button id="btnUnlockAllChapters" class="btn btn-orange btn-sm" type="button">🔓 Tümünü & +500🪙 Aç</button>
+        <button id="btnCloseAtlas" class="btn btn-navy btn-sm" type="button">✖ Kapat</button>
+      </div>
+    </div>
+    <div id="chapterGrid" class="chapter-grid"></div>
+  </div>
+</div>
+
+<!-- PRACTICE MODAL -->
+<div id="practiceModal" class="overlay modal-backdrop hidden">
+  <div class="card-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>🎯 Dedektif Soru Antrenman Merkezi</h2>
+      <button id="btnClosePractice" class="btn btn-navy btn-sm" type="button">✖ Kapat</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:12px">
+      <button class="btn btn-orange practice-pick" data-subj="turkce" type="button">📖 Türkçe (+25🪙)</button>
+      <button class="btn btn-sky practice-pick" data-subj="matematik" type="button">🔢 Matematik (+25🪙)</button>
+      <button class="btn btn-green practice-pick" data-subj="hayat" type="button">🌱 Hayat Bilgisi (+25🪙)</button>
+      <button class="btn btn-purple practice-pick" data-subj="ingilizce" type="button">🌍 İngilizce (+25🪙)</button>
+      <button class="btn practice-pick" data-subj="karma" style="grid-column:1/-1" type="button">🌟 Tüm Dersler Karma Turnuva (+45🪙)</button>
+    </div>
+  </div>
+</div>
+
+<!-- MENU MODAL -->
+<div id="menuModal" class="overlay modal-backdrop hidden">
+  <div class="card-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>⚙️ Oyun Menüsü & Komiser Dolabı</h2>
+      <button id="btnCloseMenu" class="btn btn-navy btn-sm" type="button">▶ Oyuna Dön</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">
+      <button id="btnMenuTouch" class="btn btn-green btn-sm" type="button">📱 Tablet Tuşları: Açık</button>
+      <button id="btnMenuView" class="btn btn-sky btn-sm" type="button">🧊 Görünüm: 3D</button>
+      <button id="btnMenuSound" class="btn btn-cream btn-sm" type="button">🔊 Ses: Açık</button>
+      <button id="btnMenuMusic" class="btn btn-cream btn-sm" type="button">🎵 Müzik: Açık</button>
+      <button id="btnMenuFullscreen" class="btn btn-cream btn-sm" type="button">⛶ Tam Ekran</button>
+      <button id="btnOpenCert" class="btn btn-purple btn-sm" type="button">🏅 Diplomam</button>
+    </div>
+    <h3 style="margin:12px 0 6px;color:var(--navy)">🎩 Komiser Rakun Köy Görünümü Aksesuarları</h3>
+    <div id="wardrobeGrid" class="swatch-row"></div>
+    <hr style="border:none;border-top:2px dashed #d5c8a8;margin:14px 0" />
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <span id="saveStatsText" style="font-weight:700;font-size:14px;color:#555"></span>
+      <button id="btnReturnTitle" class="btn btn-red btn-sm" type="button">🏠 Ana Ekran</button>
+    </div>
+  </div>
+</div>
+
+<!-- INFO MODAL -->
+<div id="infoModal" class="overlay modal-backdrop hidden">
+  <div class="card-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>ℹ️ Veli ve Öğretmen Rehberi</h2>
+      <button id="btnCloseInfo" class="btn btn-navy btn-sm" type="button">✖ Kapat</button>
+    </div>
+    <div style="font-size:15px;line-height:1.55;font-weight:600;color:#352f4d;margin-top:8px">
+      <p><strong>Tablet & Telefon Kontrolleri:</strong> Sol alttaki <strong>Sanal Joystick</strong> ile yürüyebilir/uçabilir, sağ alttaki büyük başparmak düğmeleriyle konuşabilir, çift zıplayıp <strong>Hover-Lazer</strong> açabilir (basılı tutarak!), kılıç savurabilir ve eldiven güçlerini kullanabilirsiniz.</p>
+      <p><strong>Bilgisayar Kontrolleri:</strong> <code>WASD / Ok Tuşları</code> hareket, <code>Boşluk</code> konuşma / zıplama / Hover-Lazer, <code>F</code> kılıç/ateş, <code>E</code> eldiven gücü, <code>Shift</code> Jet-Atılma.</p>
+      <div id="voiceStatusBox" style="background:var(--paper);padding:10px 14px;border-radius:14px;border:2px solid var(--navy);margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CERTIFICATE MODAL -->
+<div id="certModal" class="overlay modal-backdrop hidden">
+  <div class="card-modal" style="text-align:center">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>🏅 Başkomiser & Galaksi Kahramanı Diploması</h2>
+      <button id="btnCloseCert" class="btn btn-navy btn-sm" type="button">✖ Kapat</button>
+    </div>
+    <canvas id="certCanvas" width="1200" height="800"></canvas>
+    <div style="display:flex;justify-content:center;gap:12px;margin-top:10px;flex-wrap:wrap">
+      <button id="btnDownloadCert" class="btn btn-green" type="button">📷 Diplomayı İndir (PNG)</button>
+    </div>
+  </div>
+</div>
+
+<div id="banner">HARİKA İŞ DEDEKTİF! ⭐</div>
+<div id="toast">İpucu bulundu!</div>

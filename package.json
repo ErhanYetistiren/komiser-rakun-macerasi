@@ -1,0 +1,20 @@
+{
+  "name": "komiser-rakun-macerasi",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Komiser Rakun: Şapşal Kahramanlar & Astro-Galaksi Destanı — 20 Bölümlük 3D Tablet (iPad .ipa) & Web Oyunu",
+  "scripts": {
+    "icons": "node generate-icons.mjs",
+    "build": "node build.mjs",
+    "prepare:www": "node generate-icons.mjs && node build.mjs && node prepare-capacitor-www.mjs",
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/ios": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

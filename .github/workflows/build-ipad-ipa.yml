@@ -1,0 +1,133 @@
+name: Build iPad IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-ipa:
+    name: Build KomiserRakun-iPad.ipa (macOS + Xcode)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build Game Bundle, Icons & Capacitor Web Dir
+        run: |
+          npm install --no-audit --no-fund
+          npm run prepare:www
+          node --check game.bundle.js
+
+      - name: Add & Sync Capacitor iOS Project
+        run: |
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Configure iPad Fullscreen Landscape Info.plist & Custom AppIcon
+        run: |
+          PLIST="ios/App/App/Info.plist"
+          plist_set_bool() {
+            /usr/libexec/PlistBuddy -c "Set :$1 $2" "$PLIST" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :$1 bool $2" "$PLIST"
+          }
+          plist_set_str() {
+            /usr/libexec/PlistBuddy -c "Set :$1 $2" "$PLIST" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :$1 string $2" "$PLIST"
+          }
+
+          plist_set_str "CFBundleDisplayName" "Komiser Rakun"
+          plist_set_str "CFBundleDevelopmentRegion" "tr"
+          plist_set_bool "UIRequiresFullScreen" "true"
+          plist_set_bool "UIStatusBarHidden" "true"
+          plist_set_bool "UIViewControllerBasedStatusBarAppearance" "false"
+
+          for KEY in "UISupportedInterfaceOrientations" "UISupportedInterfaceOrientations~ipad"; do
+            /usr/libexec/PlistBuddy -c "Delete :$KEY" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :$KEY array" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Add :$KEY:0 string UIInterfaceOrientationLandscapeLeft" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Add :$KEY:1 string UIInterfaceOrientationLandscapeRight" "$PLIST"
+          done
+
+          ICON_SRC="assets/icons/AppIcon-1024.png"
+          ICON_SET="ios/App/App/Assets.xcassets/AppIcon.appiconset"
+          if [ -d "$ICON_SET" ]; then
+            for PNG in "$ICON_SET"/*.png; do
+              [ -e "$PNG" ] || continue
+              W=$(sips -g pixelWidth "$PNG" | awk '/pixelWidth/{print $2}')
+              H=$(sips -g pixelHeight "$PNG" | awk '/pixelHeight/{print $2}')
+              sips -z "$H" "$W" "$ICON_SRC" --out "$PNG" >/dev/null
+            done
+          fi
+
+      - name: Compile Universal iPad/iOS App via Xcode
+        run: |
+          cd ios/App
+          if [ -f "Podfile" ] && [ ! -d "App.xcworkspace" ]; then
+            pod install
+          fi
+          if [ -d "App.xcworkspace" ]; then
+            XC_ARGS=(-workspace App.xcworkspace -scheme App)
+          else
+            XC_ARGS=(-project App.xcodeproj -scheme App)
+          fi
+
+          xcodebuild "${XC_ARGS[@]}" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 \
+            TARGETED_DEVICE_FAMILY="1,2" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tail -n 80
+
+      - name: Package Ad-Hoc Signed KomiserRakun-iPad.ipa
+        run: |
+          APP_PATH=$(find "$RUNNER_TEMP/DerivedData" -name "App.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: App.app not found!"
+            exit 1
+          fi
+          echo "Found compiled bundle: $APP_PATH"
+          mkdir -p ipa_stage/Payload
+          cp -R "$APP_PATH" ipa_stage/Payload/App.app
+
+          if [ -d "ipa_stage/Payload/App.app/Frameworks" ]; then
+            for FW in ipa_stage/Payload/App.app/Frameworks/*; do
+              [ -e "$FW" ] && codesign --force --sign - "$FW" || true
+            done
+          fi
+          codesign --force --deep --sign - ipa_stage/Payload/App.app || true
+
+          cd ipa_stage
+          zip -qry ../KomiserRakun-iPad.ipa Payload
+          cd ..
+          ls -lh KomiserRakun-iPad.ipa
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KomiserRakun-iPad-IPA
+          path: KomiserRakun-iPad.ipa
+          if-no-files-found: error
+
+      - name: Publish IPA to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload v1.0.0 KomiserRakun-iPad.ipa --clobber 2>/dev/null || \
+          gh release create v1.0.0 KomiserRakun-iPad.ipa \
+            --title "Komiser Rakun iPad & iOS Sürümü (.ipa)" \
+            --notes "Sunny Hill + Astro Bot kalitesinde 20 bölümlük 3D iPad/iOS (.ipa) paketi. Sideloadly, AltStore, SideStore veya TrollStore ile doğrudan iPad'e kurulabilir."

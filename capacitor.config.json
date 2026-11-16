@@ -1,0 +1,13 @@
+{
+  "appId": "com.sapsalkahramanlar.komiserrakun",
+  "appName": "Komiser Rakun",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "backgroundColor": "#1e3566",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#1e3566",
+    "allowsLinkPreview": false,
+    "scrollEnabled": false
+  }
+}
